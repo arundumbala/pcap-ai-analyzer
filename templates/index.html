@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body { background-color: #0b1220; color: #e2e8f0; }
+      .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(18px); }
+      .gradient-border { background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); }
+    </style>
+  </head>
+  <body class="min-h-screen font-sans text-slate-100">
+    <div class="mx-auto max-w-6xl px-4 py-10">
+      <header class="mb-10 rounded-3xl border border-slate-800 bg-slate-950/70 p-8 shadow-2xl shadow-slate-900/50">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-sm uppercase tracking-[0.35em] text-cyan-400/80">Cybersecurity Analytics</p>
+            <h1 class="mt-3 text-4xl font-semibold text-slate-100 sm:text-5xl">PCAP Threat Dashboard</h1>
+            <p class="mt-4 max-w-2xl text-slate-400">Upload captured packet data and instantly review packet volume and source IP insights from your latest traffic capture.</p>
+          </div>
+          <div class="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-right">
+            <p class="text-sm uppercase tracking-[0.35em] text-slate-400">Upload status</p>
+            <p class="mt-3 text-3xl font-semibold text-cyan-300">Secure</p>
+            <p class="mt-1 text-sm text-slate-500">Allowed file type: <span class="font-medium text-slate-200">.pcap</span></p>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid gap-8 lg:grid-cols-[1.55fr_1fr]">
+        <section class="glass rounded-3xl border border-slate-800 p-8 shadow-2xl shadow-slate-950/40">
+          <div class="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-semibold text-slate-100">Upload Capture</h2>
+              <p class="mt-2 text-slate-400">Choose your PCAP file and submit for analysis.</p>
+            </div>
+            <div class="rounded-full bg-slate-800 px-4 py-2 text-sm text-slate-300">Trusted</div>
+          </div>
+
+          <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" class="space-y-4">
+            <label class="block text-sm font-medium text-slate-300">PCAP file</label>
+            <div class="rounded-3xl border border-slate-700 bg-slate-900/80 p-4">
+              <input
+                type="file"
+                name="file"
+                accept=".pcap"
+                required
+                class="w-full cursor-pointer rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400/80 focus:ring-2 focus:ring-cyan-500/20"
+              />
+            </div>
+
+            <button type="submit" class="inline-flex items-center justify-center rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-base font-semibold text-slate-950 transition hover:brightness-110">
+              Analyze PCAP
+            </button>
+          </form>
+        </section>
+
+        <section class="glass rounded-3xl border border-slate-800 p-8 shadow-2xl shadow-slate-950/40">
+          <div class="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-semibold text-slate-100">Analysis Results</h2>
+              <p class="mt-2 text-slate-400">Packet summary and source IP overview.</p>
+            </div>
+            <span class="rounded-full bg-cyan-500/15 px-3 py-1 text-sm font-medium text-cyan-200">Live</span>
+          </div>
+
+          <div class="space-y-6">
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Total packets</p>
+              <p class="mt-3 text-5xl font-semibold text-white">{{ total_packets or '—' }}</p>
+            </div>
+
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+              <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Unique source IPs</p>
+              <div class="mt-4 space-y-2">
+                {% if unique_ips %}
+                  {% for ip in unique_ips %}
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 text-sm text-slate-200">{{ ip }}</div>
+                  {% endfor %}
+                {% else %}
+                  <p class="text-sm text-slate-500">No source IPs available yet.</p>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="rounded-3xl border border-slate-800 bg-slate-950/80 p-6">
+              <div class="flex items-center justify-between">
+                <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Protocol distribution</p>
+                <span class="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.35em] text-slate-400">Count</span>
+              </div>
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                {% if protocols %}
+                  {% for name, count in protocols.items() %}
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3">
+                      <p class="text-sm text-slate-400">{{ name }}</p>
+                      <p class="mt-2 text-2xl font-semibold text-white">{{ count }}</p>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <p class="text-sm text-slate-500">No protocol data available.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <section class="glass mt-8 rounded-3xl border border-slate-800 p-8 shadow-2xl shadow-slate-950/40">
+        <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-2xl font-semibold text-slate-100">Ask the AI</h2>
+            <p class="mt-2 text-slate-400">Use the packet analysis context to get quick insights from the AI.</p>
+          </div>
+          <span class="rounded-full bg-slate-800 px-4 py-2 text-sm text-slate-300">AI Assisted</span>
+        </div>
+
+        <div class="space-y-4">
+          <textarea
+            id="aiQuestion"
+            rows="4"
+            placeholder="Type your question here..."
+            class="w-full rounded-3xl border border-slate-700 bg-slate-950/90 px-5 py-4 text-slate-100 outline-none transition focus:border-cyan-400/80 focus:ring-2 focus:ring-cyan-500/20"
+          ></textarea>
+
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              type="button"
+              id="askAiButton"
+              class="inline-flex items-center justify-center rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-base font-semibold text-slate-950 transition hover:brightness-110"
+            >
+              Submit Question
+            </button>
+            <p class="text-sm text-slate-500">AI output will appear below once the request completes.</p>
+          </div>
+
+          <div id="aiResponseCard" class="hidden rounded-3xl border border-slate-800 bg-slate-900/90 p-6">
+            <p class="text-sm uppercase tracking-[0.35em] text-slate-500">AI Response</p>
+            <div id="aiResponseText" class="mt-4 min-h-[5rem] whitespace-pre-wrap text-slate-100"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const totalPackets = {{ total_packets | default(0) | int }};
+      const uniqueIps = {{ unique_ips | default([]) | tojson }};
+      const protocols = {{ protocols | default({}) | tojson }};
+      const packetLog = {{ packet_log | default([]) | tojson }};
+
+      const askAiButton = document.getElementById('askAiButton');
+      const aiQuestion = document.getElementById('aiQuestion');
+      const aiResponseCard = document.getElementById('aiResponseCard');
+      const aiResponseText = document.getElementById('aiResponseText');
+
+      askAiButton.addEventListener('click', async () => {
+        const question = aiQuestion.value.trim();
+        if (!question) {
+          aiResponseText.textContent = 'Please enter a question before submitting.';
+          aiResponseCard.classList.remove('hidden');
+          return;
+        }
+
+        aiResponseText.textContent = 'Sending question to AI...';
+        aiResponseCard.classList.remove('hidden');
+
+        try {
+          const response = await fetch('/ask_ai', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              question,
+              pcap_context: `Total packets: ${totalPackets}\nUnique source IPs: ${uniqueIps.join(', ')}`,
+              protocols,
+              packet_log: packetLog,
+            }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            aiResponseText.textContent = data.error || 'Unable to retrieve AI response.';
+            return;
+          }
+
+          aiResponseText.textContent = data.answer || 'No answer returned from AI.';
+        } catch (error) {
+          aiResponseText.textContent = `Error: ${error.message}`;
+        }
+      });
+    </script>
+  </body>
+</html>
